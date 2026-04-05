@@ -163,3 +163,41 @@ if st.button("Generate AI Second Opinion"):
         st.success(f"✅ LOW RISK ASSESSMENT: {100-probability:.1f}% Benign Probability")
         st.write("Recommendation: Standard monitoring protocol.")
 
+
+
+# SIgnificant KPI thats driving the oucome 
+
+import shap
+import matplotlib.pyplot as plt
+
+# ... (keep your existing loading and prediction code)
+
+if st.button("Generate AI Second Opinion"):
+    with open('oncology_model.pkl', 'rb') as f:
+        ai_brain = pickle.load(f)
+    
+    user_data = pd.DataFrame([[in_radius, in_texture, in_perimeter]], 
+                             columns=['mean_radius', 'mean_texture', 'mean_perimeter'])
+    
+    prediction = ai_brain.predict(user_data)
+    probability = ai_brain.predict_proba(user_data)[0][1] * 100
+
+    if prediction == 1:
+        st.error(f"🚨 HIGH RISK ASSESSMENT: {probability:.1f}% Malignancy Probability")
+    else:
+        st.success(f"✅ LOW RISK ASSESSMENT: {100-probability:.1f}% Benign Probability")
+
+    # --- NEW: THE "WHY" BUTTON (SHAP EXPLAINABILITY) ---
+    st.divider()
+    st.subheader("🧐 AI Thought Process (Explainability)")
+    
+    # We use SHAP to explain THIS specific patient's result
+    # We need a small sample of data for the explainer to "compare" against
+    explainer = shap.LinearExplainer(ai_brain, df[['mean_radius', 'mean_texture', 'mean_perimeter']])
+    shap_values = explainer.shap_values(user_data)
+
+    # Create a SHAP Force Plot or Bar Plot
+    fig, ax = plt.subplots()
+    shap.bar_plot(shap_values[0], feature_names=['Radius', 'Texture', 'Perimeter'], show=False)
+    st.pyplot(fig)
+    st.info("💡 The bars show which feature 'pushed' the AI toward this diagnosis. Longer bars mean more influence.")
