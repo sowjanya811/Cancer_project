@@ -89,3 +89,77 @@ st.dataframe(display_df[['patient_id', 'diagnosis', 'clinical_priority', 'mean_r
 st.info("💡 IMPACT: This system reduces clinician 'Search Time' by automatically triaging patients based on tumor geometry and diagnostic markers.")
 con.close()
 
+
+
+
+import pickle # To load the Brain
+
+st.divider()
+st.subheader("🧪 AI Diagnostic Assistant (Experimental)")
+st.write("Input patient measurements below for an instant AI second opinion.")
+
+# 1. User Inputs (The "Doctor's Form")
+in_radius = st.number_input("Enter Mean Radius", value=15.0)
+in_texture = st.number_input("Enter Mean Texture", value=20.0)
+in_perimeter = st.number_input("Enter Mean Perimeter", value=100.0)
+
+# 2. Load the Brain and Predict
+if st.button("Generate AI Risk Score"):
+    with open('oncology_model.pkl', 'rb') as f:
+        brain = pickle.dump(f) # Error fix: Change dump to load
+        brain = pickle.load(f) 
+    
+    # Format the input for the AI
+    user_data = [[in_radius, in_texture, in_perimeter]]
+    prediction = brain.predict(user_data)
+    probability = brain.predict_proba(user_data)[0][1] # Chance of Malignancy
+
+    # 3. Display the Result with Clinical Color
+    if prediction[0] == 1:
+        st.error(f"🚨 AI ASSESSMENT: HIGH RISK ({probability*100:.1f}%)")
+        st.warning("Recommendation: Immediate biopsy review and oncology consultation.")
+    else:
+        st.success(f"✅ AI ASSESSMENT: LOW RISK ({(1-probability)*100:.1f}% Benign)")
+        st.info("Recommendation: Routine monitoring as per standard protocol.")
+
+
+
+# Pickle file is being added to the dashboard more optimized and response time is short
+
+
+import pickle
+
+st.divider()
+st.subheader("🧪 AI-Powered Clinical Assistant")
+st.write("Enter tumor characteristics to generate a real-time risk assessment.")
+
+# 1. Create the input form for the doctor
+c1, c2, c3 = st.columns(3)
+with c1:
+    in_radius = st.number_input("Mean Radius (mm)", value=15.0)
+with c2:
+    in_texture = st.number_input("Mean Texture", value=20.0)
+with c3:
+    in_perimeter = st.number_input("Mean Perimeter (mm)", value=100.0)
+
+# 2. Run the Prediction logic
+if st.button("Generate AI Second Opinion"):
+    # Load the "Brain" we just pushed to GitHub
+    with open('oncology_model.pkl', 'rb') as f:
+        ai_brain = pickle.load(f)
+    
+    # Format the data for the AI
+    patient_data = [[in_radius, in_texture, in_perimeter]]
+    
+    # Get the Prediction (0 or 1) and the Probability (%)
+    prediction = ai_brain.predict(patient_data)[0]
+    probability = ai_brain.predict_proba(patient_data)[0][1] * 100
+
+    # 3. Display the Clinical Result
+    if prediction == 1:
+        st.error(f"🚨 HIGH RISK ASSESSMENT: {probability:.1f}% Malignancy Probability")
+        st.write("Recommendation: Prioritize for immediate biopsy review.")
+    else:
+        st.success(f"✅ LOW RISK ASSESSMENT: {100-probability:.1f}% Benign Probability")
+        st.write("Recommendation: Standard monitoring protocol.")
+
